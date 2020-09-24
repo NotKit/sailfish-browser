@@ -16,12 +16,7 @@ Column {
     id: toolBarRow
 
     property string url
-    property string findText
-    property real certOverlayHeight
-    property bool certOverlayActive
-    property real certOverlayAnimPos
-    property real certOverlayPreferedHeight: 4 * toolBarRow.height
-    readonly property alias toolsHeight: toolsRow.height
+    readonly property real toolsHeight: height
 
     readonly property int horizontalOffset: largeScreen ? Theme.paddingLarge : Theme.paddingSmall
     readonly property int buttonPadding: largeScreen || orientation === Orientation.Landscape || orientation === Orientation.LandscapeInverted
@@ -44,49 +39,25 @@ Column {
                                         Math.floor((Screen.width - Settings.toolbarSmall * Theme.pixelRatio) /
                                                    WebUtils.cssPixelRatio) * WebUtils.cssPixelRatio
 
-
-    signal showInfoOverlay
     signal showChrome
-    signal showCertDetail
 
     width: parent.width
 
     Item {
-        id: certOverlay
-        visible: opacity > 0.0 || height > 0.0
-        opacity: certOverlayActive ? 1.0 : 0.0
-        height: certOverlayHeight
+        width: 1
+        height: Theme.paddingMedium
+    }
+
+    Label {
         width: parent.width
-
-        Behavior on opacity { FadeAnimation {} }
-
-        onVisibleChanged: {
-            if (!visible && !certOverlayActive) {
-                certOverlayLoader.active = false
-            }
-        }
-
-        Loader {
-            id: certOverlayLoader
-            active: false
-            sourceComponent: CertificateInfo {
-                security: webView.security
-                width: certOverlay.width
-                height: certOverlayHeight
-                portrait: browserPage.isPortrait
-                opacity: Math.max((certOverlayAnimPos * 2.0) - 1.0, 0)
-
-                onShowCertDetail: toolBarRow.showCertDetail()
-                onCloseCertInfo: showChrome()
-
-                onContentHeightChanged: {
-                    if (contentHeight != 0) {
-                        certOverlayPreferedHeight = contentHeight
-                    }
-                }
-            }
-            onLoaded: toolBarRow.showInfoOverlay()
-        }
+        height: toolsRow.height
+        verticalAlignment: Text.AlignVCenter
+        //: Shown when sign in to captive portal
+        //% "Sign in"
+        text: qsTrId("sailfish_browser-la-sign_in")
+        maximumLineCount: 1
+        truncationMode: TruncationMode.Fade
+        color: Theme.highlightColor
     }
 
     Row {
@@ -102,47 +73,9 @@ Column {
             onTapped: webView.goBack()
         }
 
-        Browser.ExpandingButton {
-            id: padlockIcon
-            property bool danger: webView.security && webView.security.validState && !webView.security.allGood
-            property real glow
-            expandedWidth: toolBarRow.smallIconWidth
-            icon.source: danger ? "image://theme/icon-s-filled-warning" : "image://theme/icon-s-outline-secure"
-            icon.color: danger ? Qt.tint(Theme.primaryColor,
-                                         Qt.rgba(Theme.errorColor.r, Theme.errorColor.g,
-                                                 Theme.errorColor.b, glow))
-                               : Theme.primaryColor
-            enabled: webView.security
-
-            SequentialAnimation {
-                id: securityAnimation
-                PauseAnimation { duration: 2000 }
-                NumberAnimation {
-                    target: padlockIcon; property: "glow";
-                    to: 0.0; duration: 1000; easing.type: Easing.OutCubic
-                }
-            }
-
-            function warn() {
-                glow = 1.0
-                securityAnimation.start()
-            }
-
-            onDangerChanged: warn()
-
-            Connections {
-                target: webView
-                onLoadingChanged: {
-                    if (!webView.loading && padlockIcon.danger) {
-                        padlockIcon.warn()
-                    }
-                }
-            }
-        }
-
         Label {
             anchors.verticalCenter: parent.verticalCenter
-            width: toolBarRow.width - (reloadButton.width + padlockIcon.width + backIcon.width + toolsRow.leftPadding) + Theme.paddingMedium
+            width: toolBarRow.width - (reloadButton.width + backIcon.width + toolsRow.leftPadding) + Theme.paddingMedium
             color: Theme.highlightColor
 
             text: {
@@ -172,6 +105,5 @@ Column {
                 toolBarRow.showChrome()
             }
         }
-
     }
 }

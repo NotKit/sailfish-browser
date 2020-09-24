@@ -27,12 +27,6 @@ Background {
     property alias progressBar: progressBar
     property alias animator: overlayAnimator
 
-    property real _overlayHeight: containerPage.isPortrait ? toolBar.toolsHeight : 0
-    property bool _showFindInPage
-    property bool _showUrlEntry
-    property bool _showInfoOverlay
-    readonly property bool _topGap: _showUrlEntry || _showFindInPage
-
     function loadPage(url)  {
         if (webView && webView.tabModel.count === 0) {
             webView.clearSurface();
@@ -51,7 +45,7 @@ Background {
         overlay.animator.showChrome(immediate)
     }
 
-    y: webView.fullscreenHeight - toolBar.toolsHeight
+    y: webView.fullscreenHeight - toolBar.height
 
     Private.VirtualKeyboardObserver {
         id: virtualKeyboardObserver
@@ -72,14 +66,15 @@ Background {
         portrait: containerPage.isPortrait
         webView: overlay.webView
 
-        readonly property real _fullHeight: isPortrait ? overlay.toolBar.toolsHeight : 0
-        readonly property real _infoHeight: Math.max(webView.fullscreenHeight - overlay.toolBar.certOverlayPreferedHeight - overlay.toolBar.toolsHeight, 0)
+        readonly property real _fullHeight: overlay.toolBar.height
+        // Referred from OverlayAnimator
+        readonly property real _infoHeight: 0
     }
 
     Browser.ProgressBar {
         id: progressBar
         width: parent.width
-        height: toolBar.toolsHeight
+        height: toolBar.height
         opacity: webView.loading ? 1.0 : 0.0
         progress: webView.loadProgress / 100.0
     }
@@ -89,22 +84,7 @@ Background {
 
         x: Theme.horizontalPageMargin
         width: parent.width - 2 * x
-
         url: webView.contentItem && webView.contentItem.url || ""
-        certOverlayActive: _showInfoOverlay
-        certOverlayHeight: !_showInfoOverlay
-                           ? 0
-                           : Math.max((webView.fullscreenHeight - overlay.y - overlay.toolBar.toolsHeight), 0)
-
-        certOverlayAnimPos: Math.min(Math.max((webView.fullscreenHeight - overlay.y - overlay.toolBar.toolsHeight)
-                                              / (webView.fullscreenHeight - overlayAnimator._infoHeight
-                                                 - overlay.toolBar.toolsHeight), 0.0), 1.0)
-
-        onShowInfoOverlay: {
-            _showInfoOverlay = true
-            _overlayHeight = Qt.binding(function() { return overlayAnimator._infoHeight })
-            overlayAnimator.showInfoOverlay(false)
-        }
         onShowChrome: overlayAnimator.showChrome()
     }
 }
